@@ -1,0 +1,669 @@
+#include <iostream>
+#include <thread>
+#include <string>
+#include <vector>
+#include <windows.h>
+#include <algorithm>
+
+int x[9] = {};
+	
+
+
+
+static int iterations = 0;*/
+bool mademove = false;
+static bool running = false;
+bool genmoves = false;
+static int turn = 0;
+
+
+struct state {
+	int board[9];
+	int points;
+	state() {
+		for (int i = 0; i < 9; i++) {
+			board[i] = 0;
+		}
+		points = 0;
+	}
+
+};
+
+bool isboardfull(std::vector<state> record) {
+	for (int i = 0; i < 9; i++) {
+		if (record.back().board[i] == 0) {
+			return false;
+		}
+	}
+	return true;
+}
+
+
+std::vector<state> moves = {};
+std::vector<std::vector<state>> bestmovesforround={};
+std::vector<std::vector<state>> bestmovesforx = {};
+
+void drawboard(int board[9]) {
+	if (board[0] == 1) {
+		std::cout << 'o';
+	}
+	else if (board[0] == 0) {
+		std::cout << "0";
+	}
+	else if (board[0] == -1) {
+		std::cout << 'x';
+	}
+	if (board[1] == 1) {
+		std::cout << 'o';
+	}
+	else if (board[1] == 0) {
+		std::cout << "0";
+	}
+	else if (board[1] == -1) {
+		std::cout << 'x';
+	}
+	if (board[2] == 1) {
+		std::cout << 'o' << std::endl;
+	}
+	else if (board[2] == 0) {
+		std::cout << "0" << std::endl;
+	}
+	else if (board[2] == -1) {
+		std::cout << 'x' << std::endl;
+	}
+	if (board[3] == 1) {
+		std::cout << 'o';
+	}
+	else if (board[3] == 0) {
+		std::cout << "0";
+	}
+	else if (board[3] == -1) {
+		std::cout << 'x';
+	}
+	if (board[4] == 1) {
+		std::cout << 'o';
+	}
+	else if (board[4] == 0) {
+		std::cout << "0";
+	}
+	else if (board[4] == -1) {
+		std::cout << 'x';
+	}
+	if (board[5] == 1) {
+		std::cout << 'o' << std::endl;
+	}
+	else if (board[5] == 0) {
+		std::cout << "0" << std::endl;
+	}
+	else if (board[5] == -1) {
+		std::cout << 'x' << std::endl;
+	}
+	if (board[6] == 1) {
+		std::cout << 'o';
+	}
+	else if (board[6] == 0) {
+		std::cout << "0";
+	}
+	else if (board[6] == -1) {
+		std::cout << 'x';
+	}
+	if (board[7] == 1) {
+		std::cout << 'o';
+	}
+	else if (board[7] == 0) {
+		std::cout << "0";
+	}
+	else if (board[7] == -1) {
+		std::cout << 'x';
+	}
+	if (board[8] == 1) {
+		std::cout << 'o'<<std::endl;
+	}
+	else if (board[8] == 0) {
+		std::cout << "0" << std::endl;
+	}
+	else if (board[8] == -1) {
+		std::cout << 'x' << std::endl;
+	}
+
+}
+bool compare(const std::vector<state>& v1, const std::vector<state>& v2) {
+	return v1.back().points > v2.back().points;
+}
+
+
+bool compare2(const int* a1, const int* a2, int size) {
+	for (int i = 0; i < size; i++) {
+		if (a1[i] != a2[i]) {
+			return false;
+		}
+	}
+	return true;
+}
+
+void sortwinningmoves(std::vector<std::vector<state>>& winningmoves) {
+	std::sort(winningmoves.begin(), winningmoves.end(), compare);
+}
+
+/*void checkifwinforced(std::vector<std::vector<state>>& winningmoves) {
+	for (int g = 0; g < winningmoves.size(); g++) {
+		for (int z = 0; z < winningmoves.size(); z++) {
+			if ((winningmoves[g].size() == winningmoves[z].size()) && (g = !z)) {
+				if (std::equal(std::begin(winningmoves[g][winningmoves[g].size() - 3].board),std::end(winningmoves[g][winningmoves[g].size() - 3].board), std::begin(winningmoves[z][winningmoves[z].size() - 3].board), std::end(winningmoves[z][winningmoves[z].size() - 3].board))) {
+					winningmoves[z].back().points += 10;
+					winningmoves[g].back().points += 10;
+				}
+			}
+		}
+	}
+} 
+this function took too much time to compile so i don't use it*/
+
+void removepoints(std::vector<std::vector<state>>& setofmovesforplayer, std::vector<std::vector<state>>& setofmovesforenemy) {
+	if (turn > 0) {
+		for (auto& i : setofmovesforenemy) {
+			for (auto& j : setofmovesforplayer)
+				if (i.size() < j.size()) {
+					if (i.back().points > 10) {
+						if (std::equal(std::begin(i[i.size() - 3].board), std::end(i[i.size() - 3].board), std::begin(j[i.size() - 3].board), std::end(j[i.size() - 3].board))) {
+							j.back().points -= 10;
+						}
+					}
+				}
+		}
+	}
+}
+void addpoints(std::vector<std::vector<state>>& setofmoves, int player) {
+	if (player == 1) {
+		for (int k = 0; k < setofmoves.size(); k++) {
+			int count = 0;
+			if (setofmoves[k][1].board[4] == 1) {
+				setofmoves[k].back().points += 15;
+			}
+			else if (setofmoves[k][3].board[4] == 1) {
+				setofmoves[k].back().points += 10;
+			}
+			else if (setofmoves[k].back().board[4] == 1) {
+				setofmoves[k].back().points += 5;
+		
+			}
+			if (setofmoves[k].back().board[0] == 1) {
+				count++;
+			
+			}
+			if (setofmoves[k].back().board[2] == 1) {
+				count++;
+			
+			}
+			if (setofmoves[k].back().board[6] == 1) {
+				count++;
+			
+			}
+			if (setofmoves[k].back().board[8] == 1) {
+				count++;
+				
+			}
+			if (count == 1) {
+				setofmoves[k].back().points += 5;
+			}
+			if (count == 2) {
+				setofmoves[k].back().points += 10;
+			}
+			int a = (int)(round((-10.0 / 3.0) * (setofmoves[k].size() - 1))) + 15;
+			setofmoves[k].back().points += a;
+
+		}
+	}
+	if (player == -1) {
+		for (int g = 0; g < setofmoves.size(); g++) {
+			int count = 0;
+			if (setofmoves[g][2].board[4] == -1) {
+				setofmoves[g].back().points += 15;
+			}
+			else if (setofmoves[g][4].board[4] == -1) {
+				setofmoves[g].back().points += 10;
+			}
+			else if (setofmoves[g].back().board[4] == -1) {
+				setofmoves[g].back().points += 5;
+				
+			}
+			if (setofmoves[g].back().board[0] == -1) {
+				count++;
+				
+			}
+			if (setofmoves[g].back().board[2] == -1) {
+				count++;
+				
+			}
+			if (setofmoves[g].back().board[6] == -1) {
+				count++;
+				
+			}
+			if (setofmoves[g].back().board[8] == -1) {
+				count++;
+				
+			}
+			if (count == 1) {
+				setofmoves[g].back().points += 5;
+			}
+			if (count == 2) {
+				setofmoves[g].back().points += 8;
+			}
+			int b = (int)(round((-10.0 / 3.0) * (setofmoves[g].size() - 1))) + 15;
+			setofmoves[g].back().points += b;
+		}
+	}
+}
+
+void record_moves_by_reference(int position, int player, std::vector<state>& record) {
+	if (turn == 0) {
+		state move=state();
+		move.board[position] = player;
+		record.push_back(move);
+	}
+	else {
+		state move=state();
+		for (int i = 0; i < 9; i++) {
+			move.board[i] = record.back().board[i];
+		}
+		move.board[position] = player;
+		record.push_back(move);
+	}
+	turn++;
+}
+
+std::vector<state> record_moves_by_copy(int position, int player, std::vector<state> record) {
+	if (record.size() == 1) {
+		state move=state();
+		move.board[position] = player;
+		std::vector<state> copy = record;
+		copy.push_back(move);
+		return copy;
+	}
+	else {
+		state move=state();
+		for (int i = 0; i < 9; i++) {
+			move.board[i] = record.back().board[i];
+		}
+		move.board[position] = player;
+		std::vector<state> copy = record;
+		copy.push_back(move);
+		return copy;
+	}
+
+}
+
+bool isroundwin(std::vector<state> record) {
+	if ((record.back().board[0] + record.back().board[1] + record.back().board[2] == 3) || (record.back().board[3] + record.back().board[4] + record.back().board[5] == 3) || (record.back().board[6] + record.back().board[7] + record.back().board[8] == 3) || (record.back().board[0] + record.back().board[3] + record.back().board[6] == 3) || (record.back().board[1] + record.back().board[4] + record.back().board[7] == 3) || (record.back().board[2] + record.back().board[5] + record.back().board[8] == 3) || (record.back().board[0] + record.back().board[4] + record.back().board[8] == 3) || (record.back().board[2] + record.back().board[4] + record.back().board[6] == 3) || (record.back().board[2] + record.back().board[5] + record.back().board[8] == 3)) {
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
+bool isxwin(std::vector<state> record) {
+	if ((record.back().board[0] + record.back().board[1] + record.back().board[2] == -3) || (record.back().board[3] + record.back().board[4] + record.back().board[5] == -3) || (record.back().board[6] + record.back().board[7] + record.back().board[8] == -3) || (record.back().board[0] + record.back().board[3] + record.back().board[6] == -3) || (record.back().board[1] + record.back().board[4] + record.back().board[7] == -3) || (record.back().board[2] + record.back().board[5] + record.back().board[8] == -3) || (record.back().board[0] + record.back().board[4] + record.back().board[8] == -3) || (record.back().board[2] + record.back().board[4] + record.back().board[6] == -3) || (record.back().board[2] + record.back().board[5] + record.back().board[8] == -3)) {
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
+
+void futuremoves(std::vector<state> record, std::vector<std::vector<state>>& setofmovesforround, std::vector<std::vector<state>>& setofmovesforx) {
+	if (!(isboardfull(record))) {
+		if (isroundwin(record)) {
+			setofmovesforround.push_back(record);
+		}
+		else if (isxwin(record)) {
+			setofmovesforx.push_back(record);
+		}
+		else {
+			for (int i = 0; i < 9; i++) {
+				if (record.back().board[i] == 0) {
+					if (record.size() % 2 == 0) {
+						std::vector<state> copy = record_moves_by_copy(i, -1, record);
+						futuremoves(copy, setofmovesforround, setofmovesforx);
+					}
+					if (record.size() % 2 != 0) {
+						std::vector<state> copy = record_moves_by_copy(i, 1, record);
+						futuremoves(copy, setofmovesforround, setofmovesforx);
+					}
+
+				}
+			}
+		}
+	}
+	else if (isboardfull(record)) {
+		if (isroundwin(record)) {
+			setofmovesforround.push_back(record);
+		}
+		else if (isxwin(record)) {
+			setofmovesforx.push_back(record);
+		}
+		else {
+			return;
+		}
+	}
+}
+
+
+void genbestmoves(std::vector<state> record, std::vector<std::vector<state>>& setofmovesforround, std::vector<std::vector<state>>& setofmovesforx) {
+	futuremoves(record, setofmovesforround, setofmovesforx);
+	addpoints(setofmovesforround, 1);
+	addpoints(setofmovesforx, -1);
+	sortwinningmoves(setofmovesforround);
+	sortwinningmoves(setofmovesforx);
+	/*
+	removepoints(setofmovesforround, setofmovesforx);
+	removepoints(setofmovesforx, setofmovesforround);
+	removepoints function was too slow to compile, so the reward function addpoints was enough*/
+}
+/*this is in a while loop*/
+void removeothermoves(int turn, int(&z)[9], std::vector<std::vector<state>>& setofmovesforround, std::vector<std::vector<state>>& setofmovesforx) {
+	if (turn > 0) {
+		for (int i = 0; i < setofmovesforround.size(); i++) {
+			int a[9] = {};
+			for (int k = 0; k < 9; k++) {
+				a[k] = setofmovesforround[i][turn].board[k];
+			}
+			if (!(compare2(a, z, 9))) {
+				setofmovesforround.erase(setofmovesforround.begin() + i);
+				i--;
+			}
+		}
+		for (int j = 0; j < setofmovesforx.size(); j++) {
+			int d[9] = {};
+			for (int l = 0; l < 9; l++) {
+				d[l] = setofmovesforx[j][turn].board[l];
+			}
+			if (!(compare2(d, z, 9))) {
+				setofmovesforx.erase(setofmovesforx.begin() + j);
+				j--;
+			}
+		}
+	}
+}
+
+int calculate(std::vector<state> record, std::vector<std::vector<state>>& setofmovesforround, std::vector<std::vector<state>>& setofmovesforx, int turn, int player) {/*turn is the turn of the last move*/
+	if (player == 1) {
+		if (turn % 2 == 0) {
+			for (int i = 0; i < 9; i++) {
+				if (setofmovesforround[0][turn].board[i] != setofmovesforround[0][turn + 1].board[i]) {
+					return i;
+				}
+			}
+			
+		}
+		else if (turn % 2 != 0) {
+			std::cout << "it's not the turn yet" << std::endl;
+			return NULL;
+		}
+	}
+	else if (player == -1) {
+		if (turn % 2 == 0) {
+			std::cout << "it's not the turn yet" << std::endl;
+			return NULL;
+		}
+		else if (turn % 2 != 0) {
+			for (int g = 0; g < 9; g++) {
+				if (setofmovesforx[0][turn].board[g] != setofmovesforx[0][turn+1].board[g]) {
+					return g;
+				}
+			}
+			/*difference between turnand turn - 1 + turn*/
+		}
+	}
+	return 0;
+}
+
+int makemove(int (&board)[9], std::vector<state> record, std::vector<std::vector<state>>& setofmovesforround, std::vector<std::vector<state>>& setofmovesforx, int movecount, int player) {
+	if (player == 1) {
+		if (movecount % 2 == 0) {
+			int i = calculate(record, setofmovesforround, setofmovesforx, turn, 1);
+			board[i] = 1;
+			return i;
+		}
+		else if (movecount % 2 != 0) {
+			std::cout << "it's not its turn yet" << std::endl;
+			return NULL;
+		}
+	}
+	else if (player == -1) {
+		if (movecount % 2 == 0) {
+			std::cout << "it's not its turn yet" << std::endl;
+			return NULL;
+		}
+		else if (movecount % 2 != 0) {
+			int i = calculate(record, setofmovesforround, setofmovesforx, turn, -1);
+			board[i] = -1;
+			return i;
+		}
+	}
+}
+
+
+
+
+bool run() {
+	std::cout << "enter 1 to start game" << std::endl;
+	int run;
+	std::cin >> run;
+	if (run==1){
+		running = true;
+		std::cout << "the game has started" << std::endl;
+		state first = state();
+		moves.push_back(first);
+
+	}
+	return running;
+}
+
+
+
+bool iswin(int values[9]) {
+	while (running){
+		if ((values[0]+values[1]+values[2] == 3)|| (values[3] + values[4] + values[5] == 3)|| (values[6] + values[7] + values[8] == 3)|| (values[0] + values[3] + values[6] == 3) || (values[1] + values[4] + values[7] == 3) || (values[2] + values[5] + values[8] == 3)|| (values[0] + values[4] + values[8] == 3) || (values[2] + values[4] + values[6] == 3) || (values[2] + values[5] + values[8] == 3)) {
+			running = false;
+			Sleep(1);
+
+			std::cout << "round won" << std::endl;
+			std::cout << "the game has ended" << std::endl;
+			break;	
+		}
+		else if ((values[0]+values[1]+values[2] == -3)|| (values[3] + values[4] + values[5] == -3)|| (values[6] + values[7] + values[8] == -3)|| (values[0] + values[3] + values[6] == -3) || (values[1] + values[4] + values[7] == -3) || (values[2] + values[5] + values[8] == -3)|| (values[0] + values[4] + values[8] == -3) || (values[2] + values[4] + values[6] == -3) || (values[2] + values[5] + values[8] == -3)) {
+			running = false;
+			Sleep(1);
+			std::cout << "x won" << std::endl;
+			std::cout << "the game has ended" << std::endl;
+			
+			break;
+		}
+		
+	}
+	for (int a = 0; a < 9; a++) {
+		x[a] = {};
+	}
+	bestmovesforround.clear();
+	bestmovesforx.clear();
+	moves.clear();
+	turn = 0;
+	turngen = 0;
+	genmoves = false;
+
+	return running;
+}
+
+
+
+void gameinput() {
+	while (running) {
+		
+
+		
+		bestmovesforround.clear();
+		bestmovesforx.clear();
+		mademove = false;
+		int a;
+		int b;
+		char symbol;
+		int player=NULL;
+		int d;
+		int predict;
+		genmoves = false;
+		int c;	
+
+		while (true) {
+			
+			std::cout << "enter o for round or enter x for x" << std::endl;
+			std::cin >> symbol;
+			if (symbol == 'o') {
+				player = 1;
+			}
+			if (symbol == 'x') {
+				player = -1;
+			}
+			if (turn % 2 == 0) {
+				if (player == 1) {
+					break;
+				}
+				else if (player == -1) {
+					std::cout << "wrong player for this turn" << std::endl;
+				}
+				else {
+					std::cout << "invalid player number" << std::endl;
+				}
+			}
+			if (turn % 2 != 0) {
+				if (player == -1) {
+					break;
+				}
+				else if (player == 1) {
+					std::cout << "wrong player for this turn" << std::endl;
+				}
+				else {
+					std::cout << "invalid player number" << std::endl;
+				}
+			}
+		}
+		std::cout << "press 1 to generate prediction" << std::endl;
+		
+		std::cin >> c;
+		if (c == 1) {
+			genbestmoves(moves, bestmovesforround, bestmovesforx);
+			turngen = turn;
+			genmoves = true;
+			/*std::cout << "size of best move(number of moves)" << bestmovesforround.size() << std::endl;*/
+		}
+
+		if (genmoves) {
+			std::cout << "enter 1 to see best set of moves predicted" << std::endl;
+			std::cin >> predict;
+			if (predict == 1) {
+				if (player == 1) {
+					std::cout << "predictions to win for player 1" << std::endl;
+					for (int h = 0; h < bestmovesforround[0].size(); h++) {
+						/*std::cout << bestmovesforround[0][h].board[0] << bestmovesforround[0][h].board[1] << bestmovesforround[0][h].board[2] << std::endl;
+						std::cout << bestmovesforround[0][h].board[3] << bestmovesforround[0][h].board[4] << bestmovesforround[0][h].board[5] << std::endl;
+						std::cout << bestmovesforround[0][h].board[6] << bestmovesforround[0][h].board[7] << bestmovesforround[0][h].board[8] << std::endl;*/
+						drawboard(bestmovesforround[0][h].board);
+						std::cout << "------------------------------------------" << std::endl;
+					}
+					std::cout << "predicted moves with player ID" << std::endl;
+					for (int k = 0; k < bestmovesforround[0].size(); k++) {
+						std::cout << bestmovesforround[0][k].board[0] << bestmovesforround[0][k].board[1] << bestmovesforround[0][k].board[2] << std::endl;
+						std::cout << bestmovesforround[0][k].board[3] << bestmovesforround[0][k].board[4] << bestmovesforround[0][k].board[5] << std::endl;
+						std::cout << bestmovesforround[0][k].board[6] << bestmovesforround[0][k].board[7] << bestmovesforround[0][k].board[8] << std::endl;
+						std::cout << "------------------------------------------" << std::endl;
+					}
+				}
+				if (player == -1) {
+					std::cout << "predictions to win for player -1" << std::endl;
+					for (int i = 0; i < bestmovesforx[0].size(); i++) {
+						/*std::cout << bestmovesforx[0][i].board[0] << bestmovesforx[0][i].board[1] << bestmovesforx[0][i].board[2] << std::endl;
+						std::cout << bestmovesforx[0][i].board[3] << bestmovesforx[0][i].board[4] << bestmovesforx[0][i].board[5] << std::endl;
+						std::cout << bestmovesforx[0][i].board[6] << bestmovesforx[0][i].board[7] << bestmovesforx[0][i].board[8] << std::endl;*/
+						drawboard(bestmovesforx[0][i].board);
+						std::cout << "------------------------------------------" << std::endl;
+					}
+					std::cout << "predicted moves with player ID" << std::endl;
+					for (int j = 0; j < bestmovesforx[0].size(); j++) {
+						std::cout << bestmovesforx[0][j].board[0] << bestmovesforx[0][j].board[1] << bestmovesforx[0][j].board[2] << std::endl;
+						std::cout << bestmovesforx[0][j].board[3] << bestmovesforx[0][j].board[4] << bestmovesforx[0][j].board[5] << std::endl;
+						std::cout << bestmovesforx[0][j].board[6] << bestmovesforx[0][j].board[7] << bestmovesforx[0][j].board[8] << std::endl;
+						std::cout << "------------------------------------------" << std::endl;
+					}
+				}
+			}
+			std::cout << "press 1 to make predicted move" << std::endl;
+			std::cin >> d;
+			if (d == 1) {
+				mademove = true;
+				if (player == 1) {
+					int position = makemove(x, moves, bestmovesforround, bestmovesforx, turn, 1);
+					record_moves_by_reference(position, player, moves);
+				}
+				else if (player == -1) {
+					
+					int position = makemove(x, moves, bestmovesforround, bestmovesforx, turn, -1);
+					record_moves_by_reference(position, player, moves);
+				}
+				std::cout << "real game state" << std::endl;
+				drawboard(x);
+				std::cout << "--------------------------------------------" << std::endl;
+				std::cout << "game state with player ID" << std::endl;
+				std::cout << x[0] << x[1] << x[2] << std::endl;
+				std::cout << x[3] << x[4] << x[5] << std::endl;
+				std::cout << x[6] << x[7] << x[8] << std::endl;
+				std::cout << "--------------------------------------------" << std::endl;
+
+			
+				
+				/*removeothermoves(turn, x, bestmovesforround, bestmovesforx);*/
+				if (!running) {
+					break;
+				}
+			}
+		}
+		if (mademove != true) {
+			std::cout << "enter position" << std::endl;
+			std::cin >> a;
+			x[a] = player;
+
+			record_moves_by_reference(a, player, moves);
+
+			std::cout << "real game state" << std::endl;
+			
+			drawboard(x);
+			std::cout << "--------------------------------------" << std::endl;
+			std::cout << "game state with player ID" << std::endl;
+			std::cout << x[0] << x[1] << x[2] << std::endl;
+			std::cout << x[3] << x[4] << x[5] << std::endl;
+			std::cout << x[6] << x[7] << x[8] << std::endl;
+			
+			/*removeothermoves(turn, x, bestmovesforround, bestmovesforx);*/
+
+			/*std::cout << moves.back().board[0] << moves.back().board[1] << moves.back().board[2] << std::endl;
+			std::cout << moves.back().board[3] << moves.back().board[4] << moves.back().board[5] << std::endl;
+			std::cout << moves.back().board[6] << moves.back().board[7] << moves.back().board[8] << std::endl;*/
+			if (!running) {
+				break;
+			}
+		}
+
+	}	
+}
+
+
+int main() {
+	
+	while (true) {
+		run();
+		std::thread thread1(gameinput);
+		std::thread thread6(iswin, x);
+		thread1.join();
+		thread6.join();
+	}
+}
