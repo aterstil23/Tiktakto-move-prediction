@@ -361,8 +361,8 @@ void genbestmoves(std::vector<state> record, std::vector<std::vector<state>>& se
 	removepoints(setofmovesforx, setofmovesforround);
 	removepoints function was too slow to compile, so the reward function addpoints was enough*/
 }
-/*this is in a while loop*/
-void removeothermoves(int turn, int(&z)[9], std::vector<std::vector<state>>& setofmovesforround, std::vector<std::vector<state>>& setofmovesforx) {
+
+/*void removeothermoves(int turn, int(&z)[9], std::vector<std::vector<state>>& setofmovesforround, std::vector<std::vector<state>>& setofmovesforx) {
 	if (turn > 0) {
 		for (int i = 0; i < setofmovesforround.size(); i++) {
 			int a[9] = {};
@@ -386,7 +386,42 @@ void removeothermoves(int turn, int(&z)[9], std::vector<std::vector<state>>& set
 		}
 	}
 }
-
+This was the first version of function to remove the divergent set of winning moves predicted from the real game as the turns go on. Even the second version below takes time to compile.
+void removeothermoves(int turn, int position, int(&z)[9], std::vector<std::vector<state>>& setofmovesforround, std::vector<std::vector<state>>& setofmovesforx) {
+	if (turn > 0) {
+		if (turn % 2 != 0) {
+			for (int i = 0; i < setofmovesforround.size(); i++) {
+				if (setofmovesforround[i][turn].board[position] != 1) {
+					setofmovesforround.erase(setofmovesforround.begin() + i);
+					i--;
+				}
+			}
+			for (int j = 0; j < setofmovesforx.size(); j++) {
+				if (setofmovesforx[j][turn].board[position] != 1) {
+					setofmovesforx.erase(setofmovesforx.begin() + j);
+					j--;
+				}
+			}
+		}
+		else if (turn % 2 == 0) {
+			if (turn % 2 != 0) {
+				for (int i = 0; i < setofmovesforround.size(); i++) {
+					if (setofmovesforround[i][turn].board[position] != -1) {
+						setofmovesforround.erase(setofmovesforround.begin() + i);
+						i--;
+					}
+				}
+				for (int j = 0; j < setofmovesforx.size(); j++) {
+					if (setofmovesforx[j][turn].board[position] != -1) {
+						setofmovesforx.erase(setofmovesforx.begin() + j);
+						j--;
+					}
+				}
+			}
+		}
+	}
+}
+*/
 int calculate(std::vector<state> record, std::vector<std::vector<state>>& setofmovesforround, std::vector<std::vector<state>>& setofmovesforx, int turn, int player) {/*turn is the turn of the last move*/
 	if (player == 1) {
 		if (turn % 2 == 0) {
